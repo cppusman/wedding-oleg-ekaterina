@@ -62,7 +62,7 @@ if (attendanceToggles.length > 0 && extraFields) {
   });
 }
 
-// ОТПРАВКА ФОРМЫ В TELEGRAM ЧЕРЕЗ ПРОКСИ (без VPN, без регистраций)
+// ОТПРАВКА ФОРМЫ НАПРЯМУЮ В TELEGRAM (чистый API)
 const weddingForm = document.querySelector('form');
 const rsvpContainer = document.querySelector('.rsvp-panel');
 
@@ -76,28 +76,22 @@ if (weddingForm && rsvpContainer) {
     submitBtn.disabled = true;
 
     const formData = new FormData(weddingForm);
-    const data = {
-      guestName: formData.get('Имя_гостя') || '',
-      attendance: formData.get('Присутствие') || '',
-      message: formData.get('Сообщение') || '',
-      alcohol: formData.get('Алкоголь') || ''
-    };
+    const guestName = formData.get('Имя_гостя') || 'Не указано';
+    const attendance = formData.get('Присутствие') || 'Не указано';
+    const message = formData.get('Сообщение') || 'Нет сообщения';
+    const alcohol = formData.get('Алкоголь') || 'Не выбран';
 
     const text = `🎉 *Новая анкета!*
-👤 *Имя:* ${data.guestName}
-📅 *Присутствие:* ${data.attendance}
-💬 *Сообщение:* ${data.message}
-🍷 *Алкоголь:* ${data.alcohol}`;
+👤 *Имя:* ${guestName}
+📅 *Присутствие:* ${attendance}
+💬 *Сообщение:* ${message}
+🍷 *Алкоголь:* ${alcohol}`;
 
     const BOT_TOKEN = '8962443036:AAHn9ZY2KRuvqomf-37ExTwlZ2-KFXUPryA';
     const CHAT_ID = '-1003926368528';
 
-    // Используем публичный CORS-прокси, который не заблокирован в РФ
-    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-    const TELEGRAM_URL = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
     try {
-      const response = await fetch(PROXY_URL + encodeURIComponent(TELEGRAM_URL), {
+      const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -107,19 +101,21 @@ if (weddingForm && rsvpContainer) {
         })
       });
 
-      if (!response.ok) throw new Error('Ошибка Telegram');
-
-      rsvpContainer.innerHTML = `
-        <div class="text-center py-8 animate-fade-in">
-          <h4 class="heading-font text-2xl md:text-5xl text-[#7b866f]">СПАСИБО!</h4>
-          <p class="mt-4 text-lg md:text-[2.2rem] decorative-script leading-relaxed text-stone-700">
-            Ваш ответ успешно доставлен.<br>
-            Олег и Екатерина очень ждут вас!
-          </p>
-        </div>
-      `;
+      if (response.ok) {
+        rsvpContainer.innerHTML = `
+          <div class="text-center py-8 animate-fade-in">
+            <h4 class="heading-font text-2xl md:text-5xl text-[#7b866f]">СПАСИБО!</h4>
+            <p class="mt-4 text-lg md:text-[2.2rem] decorative-script leading-relaxed text-stone-700">
+              Ваш ответ успешно доставлен.<br>
+              Олег и Екатерина очень ждут вас!
+            </p>
+          </div>
+        `;
+      } else {
+        throw new Error('Ошибка Telegram');
+      }
     } catch (error) {
-      alert('Произошла ошибка. Пожалуйста, проверьте интернет и попробуйте ещё раз.');
+      alert('Произошла ошибка при отправке. Пожалуйста, проверьте интернет и попробуйте ещё раз.');
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
