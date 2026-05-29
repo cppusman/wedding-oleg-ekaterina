@@ -91,16 +91,19 @@ if (weddingForm && rsvpContainer) {
     const CHAT_ID = '-1003926368528';
 
     try {
-      const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      // ВСТАВЬ СЮДА ССЫЛКУ, КОТОРУЮ СКОПИРОВАЛ ИЗ ГУГЛА
+      const GAS_URL = 'https://script.google.com/macros/s/AKfycbxA1IMLmUGLBJL89h_bVEMHg77qyuwVzmJPD0zBB0dKjvhxrLGAf1wRrUV57Si5GfZn/exec';
+
+      // Мы используем x-www-form-urlencoded, чтобы браузер не блокировал запрос (CORS)
+      const response = await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: text,
-          parse_mode: 'Markdown'
-        })
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ text: text })
       });
 
+      // Если Гугл ответил, значит всё ушло
       if (response.ok) {
         rsvpContainer.innerHTML = `
           <div class="text-center py-8 animate-fade-in">
@@ -112,7 +115,7 @@ if (weddingForm && rsvpContainer) {
           </div>
         `;
       } else {
-        throw new Error('Ошибка Telegram');
+        throw new Error('Ошибка сервера');
       }
     } catch (error) {
       alert('Произошла ошибка при отправке. Пожалуйста, проверьте интернет и попробуйте ещё раз.');
