@@ -62,7 +62,7 @@ if (attendanceToggles.length > 0 && extraFields) {
   });
 }
 
-// ОТПРАВКА ФОРМЫ ЧЕРЕЗ GOOGLE APPS SCRIPT (работает без VPN)
+// ОТПРАВКА ФОРМЫ В TELEGRAM ЧЕРЕЗ ПРОКСИ (без VPN, без регистраций)
 const weddingForm = document.querySelector('form');
 const rsvpContainer = document.querySelector('.rsvp-panel');
 
@@ -83,28 +83,41 @@ if (weddingForm && rsvpContainer) {
       alcohol: formData.get('Алкоголь') || ''
     };
 
+    const text = `🎉 *Новая анкета!*
+👤 *Имя:* ${data.guestName}
+📅 *Присутствие:* ${data.attendance}
+💬 *Сообщение:* ${data.message}
+🍷 *Алкоголь:* ${data.alcohol}`;
+
+    const BOT_TOKEN = '8962443036:AAHn9ZY2KRuvqomf-37ExTwlZ2-KFXUPryA';
+    const CHAT_ID = '-1003926368528';
+
+    // Используем публичный CORS-прокси, который не заблокирован в РФ
+    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+    const TELEGRAM_URL = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
     try {
-      const response = await fetch('https://script.google.com/macros/s/AKfycbyLcigO9Bxj0lc1WO1bCDmVagZ26ZSCAFhXidsBQ_eoorXJj3qlV7SYk_d_wCcdiKLK/exec', {
+      const response = await fetch(PROXY_URL + encodeURIComponent(TELEGRAM_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: text,
+          parse_mode: 'Markdown'
+        })
       });
 
-      const result = await response.json();
+      if (!response.ok) throw new Error('Ошибка Telegram');
 
-      if (result.success) {
-        rsvpContainer.innerHTML = `
-          <div class="text-center py-8 animate-fade-in">
-            <h4 class="heading-font text-2xl md:text-5xl text-[#7b866f]">СПАСИБО!</h4>
-            <p class="mt-4 text-lg md:text-[2.2rem] decorative-script leading-relaxed text-stone-700">
-              Ваш ответ успешно доставлен.<br>
-              Олег и Екатерина очень ждут вас!
-            </p>
-          </div>
-        `;
-      } else {
-        throw new Error(result.error || 'Ошибка сервера');
-      }
+      rsvpContainer.innerHTML = `
+        <div class="text-center py-8 animate-fade-in">
+          <h4 class="heading-font text-2xl md:text-5xl text-[#7b866f]">СПАСИБО!</h4>
+          <p class="mt-4 text-lg md:text-[2.2rem] decorative-script leading-relaxed text-stone-700">
+            Ваш ответ успешно доставлен.<br>
+            Олег и Екатерина очень ждут вас!
+          </p>
+        </div>
+      `;
     } catch (error) {
       alert('Произошла ошибка. Пожалуйста, проверьте интернет и попробуйте ещё раз.');
       submitBtn.textContent = originalText;
